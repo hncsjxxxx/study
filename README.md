@@ -6,4 +6,4 @@
 否有效
 
 ### 2. import moduleName from 'xxModule'和import('xxModule')经过webpack编译打包后最终变成了什么？在浏览器中是怎么运行的？
-    第一个import就不用说了，可以说现在的前端项目随处可见，第二个import可以在需要懒加载的地方看到.
+第一个import就不用说了，可以说现在的前端项目随处可见，第二个import可以在需要懒加载的地方看到.
