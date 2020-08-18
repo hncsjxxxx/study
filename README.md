@@ -15,4 +15,22 @@
 加载的动作时，会动态的在head标签中创建一个script标签，然后发送一个http请求，加载模块，模块加载完成以后自动执行其中的
 代码，主要的工作有两个，更改缓存中模块的状态，另一个就是执行模块代码。
 
+#### 可能你学会了如何使用 Webpack ，也大致知道其工作原理，可是你想过 Webpack 输出的 bundle.js 是什么样子的吗？ 为什么原来一个个的模块文件被合并成了一个单独的文件？为什么 bundle.js 能直接运行在浏览器中？####
+
+###### src/add ######
+``` javascript
+export default function(a, b) {
+    let { name } = { name: 'hello world,'} // 这里特意使用了ES6语法
+    return name + a + b
+}
+```
+
+###### src/main.js ######
+``` javascript
+import Add from './add'
+console.log(Add, Add(1, 2))
+```
+
+###### 打包后精简的bundle.js文件如下: ######
+
 # 总结
