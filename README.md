@@ -7,8 +7,8 @@
 
 # WEBPACK
 ### 1. import moduleName from 'xxModule'和import('xxModule')经过webpack编译打包后最终变成了什么？在浏览器中是怎么运行的？###
-  第一个import就不用说了，可以说现在的前端项目随处可见，第二个import可以在需要`懒加载`的地方看到.
-  import经过webpack打包以后变成一些`Map对象`，key为模块路径，value为模块的可执行函数；
+  第一个import就不用说了，可以说现在的前端项目随处可见，第二个import可以在需要**懒加载**的地方看到.
+  import经过webpack打包以后变成一些**Map对象**，key为模块路径，value为模块的可执行函数；
   代码加载到浏览器以后从入口模块开始执行，其中执行的过程中，最重要的就是webpack定义的__webpack_require__函数，负责实
 际的模块加载并执行这些模块内容，返回执行结果，其实就是读取Map对象，然后执行相应的函数；
   当然其中的异步方法（import('xxModule')）比较特殊一些，它会单独打成一个包，采用动态加载的方式，具体过程：当用户触发其
