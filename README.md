@@ -32,7 +32,8 @@ console.log(Add, Add(1, 2))
 ```
 
 ###### 打包后精简的bundle.js文件如下: ######
-相关链接 [链接](https://github.com/Pines-Cheng/blog/issues/45)
+相关链接 [链接1](https://github.com/Pines-Cheng/blog/issues/45)
+            [链接2](https://juejin.im/post/6844903802382860296)
 ```javascript
 // modules是存放所有模块的数组，数组中每个元素存储{ 模块路径: 模块导出代码函数 }
 (function(modules) {
@@ -106,4 +107,8 @@ return __webpack_require__(__webpack_require__.s = "./src/main.js");
   })
 });
 ```
+bundle.js 能直接运行在浏览器中的原因在于webpack通过__webpack_require__ 函数模拟了模块的加载（类似于node中的require语法），把定义的模块内容挂载到module.exports上。
+原来一个个独立的模块文件被合并到了一个单独的 bundle.js 的原因在于浏览器不能像 Node.js 那样快速地去本地加载一个个模块文件，而必须通过网络请求去加载还未得到的文件。 如果模块数量很多，加载时间会很长，因此把所有模块都存放在了数组中，执行一次网络加载
+如果仔细分析 __webpack_require__ 函数的实现，你还有发现 Webpack 做了缓存优化： 执行加载过的模块不会再执行第二次，执行结果会缓存在内存中，当某个模块第二次被访问时会直接去内存中读取被缓存的返回值。
+
 # 总结
