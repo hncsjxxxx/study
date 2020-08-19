@@ -271,3 +271,31 @@ return __webpack_require__(__webpack_require__.s = "./src/main.js");
 * webpack异步加载模块实现流程跟jsonp基本一致。
 
 # 总结
+### 1. 一个对象如何复制给另一个对象，互不影响
+* Object.assign();
+```javascript
+let obj1 = { a: 0 , b: { c: 0}};
+  let obj2 = Object.assign({}, obj1);
+  console.log(JSON.stringify(obj2)); // { a: 0, b: { c: 0}}
+   
+  obj1.a = 1;
+  console.log(JSON.stringify(obj1)); // { a: 1, b: { c: 0}}
+  console.log(JSON.stringify(obj2)); // { a: 0, b: { c: 0}}
+   
+  obj2.a = 2;
+  console.log(JSON.stringify(obj1)); // { a: 1, b: { c: 0}}
+  console.log(JSON.stringify(obj2)); // { a: 2, b: { c: 0}}
+   
+  obj2.b.c = 3;
+  console.log(JSON.stringify(obj1)); // { a: 1, b: { c: 3}}
+  console.log(JSON.stringify(obj2)); // { a: 2, b: { c: 3}}
+  ```
+
+* 简单粗暴的方法  结束两个对象的关联性的问题
+```javascript 
+   let obj1 = { a: 0 , b: { c: 0}};
+   let obj3 = JSON.parse(JSON.stringify(obj1));
+   obj1.a = 4;
+   obj1.b.c = 4;
+   console.log(JSON.stringify(obj3)); // { a: 0, b: { c: 0}}
+   ```
