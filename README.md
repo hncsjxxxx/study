@@ -34,6 +34,8 @@ console.log(Add, Add(1, 2))
 ###### 打包后精简的bundle.js文件如下: ######
 相关链接 [链接1](https://github.com/Pines-Cheng/blog/issues/45)
             [链接2](https://juejin.im/post/6844903802382860296)
+           [Webpack揭秘——走向高阶前端的必经之路](https://imweb.io/topic/5baca58079ddc80f36592f1a) 1.2.4webpack输出结果解析,可搭配着看,文章也不错
+           [Webpack源码解读：理清编译主流程](https://juejin.im/post/6844903987129352206)
 ```javascript
 // modules是存放所有模块的数组，数组中每个元素存储{ 模块路径: 模块导出代码函数 }
 (function(modules) {
