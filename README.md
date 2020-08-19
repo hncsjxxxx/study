@@ -113,5 +113,161 @@ return __webpack_require__(__webpack_require__.s = "./src/main.js");
 
 #### WEBPACK模块异步加载 
 以上webpack把所有模块打包到主文件中，所以模块加载方式都是同步方式。但在开发应用过程中，按需加载（也叫懒加载）也是经常使用的优化技巧之一。按需加载，通俗讲就是代码执行到异步模块（模块内容在另外一个js文件中），通过网络请求即时加载对应的异步模块代码，再继续接下去的流程。那webpack是如何执行代码时，判断哪些代码是异步模块呢？webpack又是如何加载异步模块呢？
+最新的webpack4推荐使用新的import() api,而import()返回promise，这意味着可以使用最新的ES8 async/await语法，使得可以像书写同步代码一样，执行异步流程。
+现在我们从webpack打包后的源码来看下，webpack是如何实现异步模块加载的。修改入口文件main.js，引入异步模块async.js：
+``` javascript
+// main.js
+import Add from './add'
+console.log(Add, Add(1, 2), 123)
+
+// 按需加载
+// 方式1: require.ensure
+// require.ensure([], function(require){
+//     var asyncModule = require('./async')
+//     console.log(asyncModule.default, 234)
+// })
+
+// 方式2: webpack4新的import语法
+// 需要加@babel/plugin-syntax-dynamic-import插件
+let asyncModuleWarp = async () => await import('./async')
+console.log(asyncModuleWarp().default, 234)
+
+// async.js
+export default function() {
+    return 'hello, aysnc module'
+}
+```
+以上代码打包会生成两个chunk文件，分别是主文件main.bundle.js以及异步模块文件0.bundle.js。同样，为方便读者快速理解，精简保留主流程代码。
+```javascript
+// 0.bundle.js
+
+// 异步模块
+// window["webpackJsonp"]是连接多个chunk文件的桥梁
+// window["webpackJsonp"].push = 主chunk文件.webpackJsonpCallback
+(window["webpackJsonp"] = window["webpackJsonp"] || []).push([
+  [0], // 异步模块标识chunkId,可判断异步代码是否加载成功
+  // 跟同步模块一样，存放了{模块路径：模块内容}
+  {
+  "./src/async.js": (function(module, __webpack_exports__, __webpack_require__) {
+      __webpack_require__.r(__webpack_exports__);
+      __webpack_exports__["default"] = (function () {
+        return 'hello, aysnc module';
+      });
+    })
+  }
+]);
+```
+以上知道，异步模块打包后的文件中保存着异步模块源代码，同时为了区分不同的异步模块，还保存着该异步模块对应的标识：chunkId。以上代码主动调用window["webpackJsonp"].push函数，该函数是连接异步模块与主模块的关键函数，该函数定义在主文件中，实际上window["webpackJsonp"].push = webpackJsonpCallback，详细源码咱们看看主文件打包后的代码
+```javascript
+// main.bundle.js
+
+(function(modules) {
+// 获取到异步chunk代码后的回调函数
+// 连接两个模块文件的关键函数
+function webpackJsonpCallback(data) {
+  var chunkIds = data[0]; //data[0]存放了异步模块对应的chunkId
+  var moreModules = data[1]; // data[1]存放了异步模块代码
+
+  // 标记异步模块已加载成功
+  var moduleId, chunkId, i = 0, resolves = [];
+  for(;i < chunkIds.length; i++) {
+    chunkId = chunkIds[i];
+    if(installedChunks[chunkId]) {
+      resolves.push(installedChunks[chunkId][0]);
+    }
+    installedChunks[chunkId] = 0;
+  }
+
+  // 把异步模块代码都存放到modules中
+  // 此时万事俱备，异步代码都已经同步加载到主模块中
+  for(moduleId in moreModules) {
+    modules[moduleId] = moreModules[moduleId];
+  }
+
+  // 重点：执行resolve() = installedChunks[chunkId][0]()返回promise
+  while(resolves.length) {
+    resolves.shift()();
+  }
+};
+
+// 记录哪些chunk已加载完成
+var installedChunks = {
+  "main": 0
+};
+
+// __webpack_require__依然是同步读取模块代码作用
+function __webpack_require__(moduleId) {
+  ...
+}
+
+// 加载异步模块
+__webpack_require__.e = function requireEnsure(chunkId) {
+  // 创建promise
+  // 把resolve保存到installedChunks[chunkId]中，等待代码加载好再执行resolve()以返回promise
+  var promise = new Promise(function(resolve, reject) {
+    installedChunks[chunkId] = [resolve, reject];
+  });
+
+  // 通过往head头部插入script标签异步加载到chunk代码
+  var script = document.createElement('script');
+  script.charset = 'utf-8';
+  script.timeout = 120;
+  script.src = __webpack_require__.p + "" + ({}[chunkId]||chunkId) + ".bundle.js"
+  var onScriptComplete = function (event) {
+    var chunk = installedChunks[chunkId];
+  };
+  script.onerror = script.onload = onScriptComplete;
+  document.head.appendChild(script);
+
+  return promise;
+};
+
+var jsonpArray = window["webpackJsonp"] = window["webpackJsonp"] || [];
+// 关键代码： window["webpackJsonp"].push = webpackJsonpCallback
+jsonpArray.push = webpackJsonpCallback;
+
+// 入口执行
+return __webpack_require__(__webpack_require__.s = "./src/main.js");
+})
+({
+"./src/add.js": (function(module, __webpack_exports__, __webpack_require__) {...}),
+
+"./src/main.js": (function(module, exports, __webpack_require__) {
+  // 同步方式
+  var Add = __webpack_require__("./src/add.js").default;
+  console.log(Add, Add(1, 2), 123);
+
+  // 异步方式
+  var asyncModuleWarp =function () {
+    var _ref = _asyncToGenerator( regeneratorRuntime.mark(function _callee() {
+      return regeneratorRuntime.wrap(function _callee$(_context) {
+        // 执行到异步代码时，会去执行__webpack_require__.e方法
+        // __webpack_require__.e其返回promise，表示异步代码都已经加载到主模块了
+        // 接下来像同步一样，直接加载模块
+        return __webpack_require__.e(0)
+              .then(__webpack_require__.bind(null, "./src/async.js"))
+      }, _callee);
+    }));
+
+    return function asyncModuleWarp() {
+      return _ref.apply(this, arguments);
+    };
+  }();
+  console.log(asyncModuleWarp().default, 234)
+})
+});
+```
+从上面源码可以知道，webpack实现模块的异步加载有点像jsonp的流程。在主js文件中通过在head中构建script标签方式，异步加载模块信息；再使用回调函数webpackJsonpCallback，把异步的模块源码同步到主文件中，所以后续操作异步模块可以像同步模块一样。
+源码具体实现流程
+* 遇到异步模块时，使用__webpack_require__.e函数去把异步代码加载进来。该函数会在html的head中动态增加script标签，src指向指定的异步模块存放的文件。
+* 加载的异步模块文件会执行webpackJsonpCallback函数，把异步模块加载到主文件中。
+* 所以后续可以像同步模块一样,直接使用__webpack_require__("./src/async.js")加载异步模块。
+
+注意源码中的primose使用非常精妙，主模块加载完成异步模块才resolve()
+
+* webpack对于ES模块/CommonJS模块的实现，是基于自己实现的webpack_require，所以代码能跑在浏览器中。
+* 从 webpack2 开始，已经内置了对 ES6、CommonJS、AMD 模块化语句的支持。但不包括新的ES6语法转为ES5代码，这部分工作还是留给了babel及其插件。
+* 在webpack中可以同时使用ES6模块和CommonJS模块。因为 module.exports很像export default，所以ES6模块可以很方便兼容 CommonJS：import XXX from 'commonjs-module'。反过来CommonJS兼容ES6模块，需要额外加上default：require('es-module').default。
+* webpack异步加载模块实现流程跟jsonp基本一致。
 
 # 总结
