@@ -32,32 +32,46 @@ console.log(Add, Add(1, 2))
 ```
 
 ###### 打包后精简的bundle.js文件如下: ######
+相关链接 [链接](https://github.com/Pines-Cheng/blog/issues/45)
 ```javascript
 // modules是存放所有模块的数组，数组中每个元素存储{ 模块路径: 模块导出代码函数 }
 (function(modules) {
-// 模块缓存作用，已加载的模块可以不用再重新读取，提升性能
+// 模块缓存作用，已加载的模块可以不用再重新读取，提升性能,安装过的模块都存放在这里面
 var installedModules = {};
 
 // 关键函数，加载模块代码
+// 去数组中加载一个模块，moduleId 为要加载模块在数组中的 index
 // 形式有点像Node的CommonJS模块，但这里是可跑在浏览器上的es5代码
 function __webpack_require__(moduleId) {
   // 缓存检查，有则直接从缓存中取得
   if(installedModules[moduleId]) {
     return installedModules[moduleId].exports;
   }
-  // 先创建一个空模块，塞入缓存中
+  // 如果缓存中不存在需要加载的模块，就新建一个模块，并把它存在缓存中
   var module = installedModules[moduleId] = {
-    i: moduleId,
+    i: moduleId, // 模块在数组中的 index
     l: false, // 标记是否已经加载
-    exports: {} // 初始模块为空
+    exports: {}  // 该模块的导出值
   };
 
-  // 把要加载的模块内容，挂载到module.exports上
+  // 从 modules 中获取 index 为 moduleId 的模块对应的函数
+  // 再调用这个函数，同时把函数需要的参数传入
   modules[moduleId].call(module.exports, module, module.exports, __webpack_require__);
   module.l = true; // 标记为已加载
 
   // 返回加载的模块，调用方直接调用即可
   return module.exports;
+}
+
+//补充的另一个博客的配置
+{
+        // Webpack 配置中的 publicPath，用于加载被分割出去的异步代码
+        __webpack_require__.p = "";
+
+        // 使用 __webpack_require__ 去加载 index 为 0 的模块，并且返回该模块导出的内容
+        // index 为 0 的模块就是 main.js 对应的文件，也就是执行入口模块
+        // __webpack_require__.s 的含义是启动模块对应的 index
+        return __webpack_require__(__webpack_require__.s = 0);
 }
 
 // __webpack_require__对象下的r函数
