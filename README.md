@@ -344,6 +344,56 @@ function step(timestamp) {
 window.requestAnimationFrame(step);
 ```
 ##### rAF与 setTimeout 相比
-rAF(requestAnimationFrame) 最大的优势是「由浏览器来决定回调函数的执行时机」。</br>
-是是是
-上市
+rAF(requestAnimationFrame) 最大的优势是「由浏览器来决定回调函数的执行时机」。跟着浏览器的绘制走，如果浏览设备绘制间隔是16.7ms，那我就这个间隔绘制；如果浏览设备绘制间隔是10ms, 我就10ms绘制。这样就不会存在过度绘制的问题，动画不会掉帧，自然流畅的说~~</br>
+另外它可以自动调节频率。如果callback工作太多无法在一帧内完成会自动降低为30fps。虽然降低了，但总比掉帧好</br>
+内部是这么运作的：</br>
+浏览器（如页面）每次要洗澡（重绘），就会通知我(requestAnimationFrame)：小丸子，我要洗澡了，你可以跟我一起洗哦！</br>
+这是资源非常高效的一种利用方式。怎么讲呢？
+* 就算很多个小丸子要一起洗澡，浏览器只要通知一次就可以了。而setTimeout貌似是多个独立绘制。
+* 页面最小化了，或者被Tab切换关灯了。页面是不会洗澡的，自然，小丸子也不会洗澡的（没通知啊）。页面绘制全部停止，资源高效利用。有效节省了 CPU 开销</br>
+##### CSS3动画不能应用所有属性
+使用CSS3动画可以改变高宽，方位，角度，透明度等等。但是，就像六道带土也有弱点一样，CSS3动画也有属性鞭长莫及。比方说scrollTop值。如果我们希望返回顶部是个平滑滚动效果，就目前而言，CSS3似乎是无能为力的。
+##### CSS3支持的动画效果有限
+
+### 5. 能不能实现图片的懒加载
+1. 拿到所以的图片img dom
+2. 重点是第二步，判断当前图片是否到了可视区范围内
+3. 到了可视区的高度以后，就将img的data-src属性设置给src
+4. 绑定window的scroll事件
+
+###### 第一种方式
+``` javascript
+let Img = document.getElementsByTagName("img"),
+            len = Img.length,
+            count = 0; 
+        function lazyLoad () {
+            let viewH = document.body.clientHeight, //可见区域高度
+                scrollTop = document.body.scrollTop; //滚动条距离顶部高度
+            for(let i = count; i < len; i++) {
+                if(Img[i].offsetTop < scrollTop + viewH ){
+                    if(Img[i].getAttribute('src') === 'default.png'){
+                        Img[i].src = Img[i].getAttribute('data-src')
+                        count++;
+                    }
+                }
+            }
+        }
+        function throttle(fn, delay) {
+            let flag = true,
+                timer = null;
+            return function (...args) {
+                let context = this;
+                if (!flag) return;
+                flag = false;
+                clearTimeout(timer)
+                timer = setTimeout(() => {
+                    fn.apply(context, args);
+                    flag = true;
+                }, delay);
+            };
+        };
+        window.addEventListener('scroll', throttle(lazyLoad,1000))
+        
+        lazyLoad();  // 首次加载
+        ```
+###### 第二种方式
