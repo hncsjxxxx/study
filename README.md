@@ -314,3 +314,36 @@ let obj1 = { a: 0 , b: { c: 0}};
 > 如果 script 标签中包含 defer，那么这一块脚本将不会影响 HTML 文档的解析，而是等到HTML 解析完成后才会执行。而 DOMContentLoaded 只有在 defer 脚本执行结束后才会被触发。
 * 情况1：HTML还没解析完成时，defer脚本已经加载完毕，那么defer脚本将等待HTML解析完成后再执行。defer脚本执行完毕后触发DOMContentLoaded事件
 * 情况2：HTML解析完成时，defer脚本还没加载完毕，那么defer脚本继续加载，加载完成后直接执行，执行完毕后触发DOMContentLoaded事件
+
+### 3. 防抖节流使用场景
+防抖
+* search搜索，用户不断输入值时，用防抖来节约Ajax请求,也就是输入框事件。
+* window触发resize时，不断的调整浏览器窗口大小会不断的触发这个事件，用防抖来让其只触发一次
+
+节流
+* 鼠标的点击事件，比如mousedown只触发一次
+* 监听滚动事件，比如是否滑到底部自动加载更多，用throttle判断
+* 比如游戏中发射子弹的频率(1秒发射一颗)
+
+### 4. 谈一谈你对requestAnimationFrame（rAF）理解
+> window.requestAnimationFrame() 方法告诉浏览器您希望执行动画并请求浏览器在下一次重绘之前调用指定的函数来更新动画。该方法使用一个回调函数作为参数，这个回调函数会在浏览器重绘之前调用。-- MDN
+``` javascript
+var start = null;
+var element = document.getElementById('SomeElementYouWantToAnimate');
+element.style.position = 'absolute';
+
+function step(timestamp) {
+  if (!start) start = timestamp;
+  var progress = timestamp - start;
+  element.style.left = Math.min(progress / 10, 200) + 'px';
+  if (progress < 2000) {
+    window.requestAnimationFrame(step);
+  }
+}
+
+window.requestAnimationFrame(step);
+```
+##### rAF与 setTimeout 相比
+rAF(requestAnimationFrame) 最大的优势是「由浏览器来决定回调函数的执行时机」。</br>
+是是是
+上市
