@@ -361,7 +361,7 @@ rAF(requestAnimationFrame) 最大的优势是「由浏览器来决定回调函�
 3. 到了可视区的高度以后，就将img的data-src属性设置给src
 4. 绑定window的scroll事件
 
-###### 第一种方式
+###### 第一种方式 clientHeight-scrollTop-offsetTop
 ``` javascript
 let Img = document.getElementsByTagName("img"),
             len = Img.length,
@@ -395,5 +395,76 @@ let Img = document.getElementsByTagName("img"),
         window.addEventListener('scroll', throttle(lazyLoad,1000))
         
         lazyLoad();  // 首次加载
-        ```
-###### 第二种方式
+```
+###### 第二种方式 使用 element.getBoundingClientRect() API 直接得到 top 值。
+``` javascript
+
+let Img = document.getElementsByTagName("img"),
+            len = Img.length,
+            count = 0; 
+        function lazyLoad () {
+            let viewH = document.body.clientHeight, //可见区域高度
+                scrollTop = document.body.scrollTop; //滚动条距离顶部高度
+            for(let i = count; i < len; i++) {
+                if(Img[i].getBoundingClientRect().top < scrollTop + viewH ){
+                    if(Img[i].getAttribute('src') === 'default.png'){
+                        Img[i].src = Img[i].getAttribute('data-src')
+                        count++;
+                    }
+                }
+            }
+        }
+        function throttle(fn, delay) {
+            let flag = true,
+                timer = null;
+            return function (...args) {
+                let context = this;
+                if (!flag) return;
+                flag = false;
+                clearTimeout(timer)
+                timer = setTimeout(() => {
+                    fn.apply(context, args);
+                    flag = true;
+                }, delay);
+            };
+        };
+        window.addEventListener('scroll', throttle(lazyLoad,1000))
+
+        lazyLoad();  // 首次加载
+```
+
+### XSS CSRF
+#### 存储型XSS
+从图上看，存储型 XSS 攻击大致步骤如下：
+
+* 首先黑客利用站点漏洞将一段恶意 JavaScript 代码提交到网站的数据库中；
+* 然后用户向网站请求包含了恶意 JavaScript 脚本的页面；
+* 当用户浏览该页面的时候，恶意脚本就会将用户的 Cookie 信息等数据上传到服务器。
+
+比如常见的场景： </br>
+在评论区提交一份脚本代码，假设前后端没有做好转义工作，那内容上传到服务器，在页面渲染的时候就会直接执行，相当于执行一段未知的JS代码。这就是存储型 XSS 攻击。</br>
+
+#### 反射型XSS
+反射型 XSS 攻击指的就是恶意脚本作为「网络请求的一部分」，随后网站又把恶意的JavaScript脚本返回给用户，当恶意 JavaScript 脚本在用户页面中被执行时，黑客就可以利用该脚本做一些恶意操作。</br>
+
+### 基于 DOM 的 XSS 攻击
+基于 DOM 的 XSS 攻击是不牵涉到页面 Web 服务器的。具体来讲，黑客通过各种手段将恶意脚本注入用户的页面中，在数据传输的时候劫持网络数据包</br>
+
+常见的劫持手段有：
+
+* WIFI路由器劫持
+* 本地恶意软件
+
+#### 防范
+### CSP
+该安全策略的实现基于一个称作 Content-Security-Policy的 HTTP 首部。
+
+可以移步MDN，有更加规范的解释。我在这里就是梳理一下吧。
+
+CSP，即浏览器中的内容安全策略，它的核心思想大概就是服务器决定浏览器加载哪些资源，具体来说有几个功能👇
+
+* 限制加载其他域下的资源文件，这样即使黑客插入了一个 JavaScript 文件，这个 JavaScript 文件也是无法被加载的；
+* 禁止向第三方域提交数据，这样用户数据也不会外泄；
+* 提供上报机制，能帮助我们及时发现 XSS 攻击。
+* 禁止执行内联脚本和未授权的脚本；
+ 
