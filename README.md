@@ -492,6 +492,69 @@ CSP，即浏览器中的内容安全策略，它的核心思想大概就是服�
  #### Session-cookie存在的问题
 *  由于服务器端需要对接大量的客户端，也就需要存放大量的 SessionId，这样会导致服务器压力过大。
 *  如果服务器端是一个集群，为了同步登录态，需要将 SessionId 同步到每一台机器上，无形中增加了服务器端维护成本。
-*  由于 SessionId 存放在 Cookie 中，所以无法避免 CSRF 攻击。
+*  由于 SessionId 存放在 Cookie 中，所以无法避免 CSRF 攻击。常见的方式是使用csrf_token解决
 
 ### Token
+> Token 是服务端生成的一串字符串，以作为客户端请求的一个令牌。当第一次登录后，服务器会生成一个 Token 并返回给客户端，客户端后续访问时，只需带上这个 Token 即可完成身份认证。无需再次带上用户名和密码。
+#### Token 的优缺点
+* 服务器端不需要存放 Token，所以不会对服务器端造成压力，即使是服务器集群，也不需要增加维护成本。
+* Token 可以存放在前端任何地方，可以不用保存在 Cookie 中，提升了页面的安全性。
+* Token 下发之后，只要在生效时间之内，就一直有效，如果服务器端想收回此 Token 的权限，并不容易。
+* Token 完全由应用管理，所以它可以避开同源策略. (Cookie是不允许垮域访问的,token不存在)
+* Token 支持手机端访问(Cookie不支持手机端访问)
+* 服务器只需要对浏览器传来的token值进行解密，解密完成后进行用户数据的查询，如果查询成功，则通过认证.所以，即时有了多台服务器，服务器也只是做了token的解密和用户数据的查询，它不需要在服务端去保留用户的认证信息或者会话信息，这就意味着基于token认证机制的应用不需要去考虑用户在哪一台服务器登录了，这就为应用的扩展提供了便利，解决了session扩展性的弊端。
+
+* 占带宽: 正常情况下token要比 session_id更大，需要消耗更多流量，挤占更多带宽.(不过几乎可以忽略)
+* 性能问题: 相比于session-cookie来说，token需要服务端花费更多的时间和性能来对token进行解密验证.其实Token相比于session-cookie来说就是一个"时间换空间"的方案.
+
+#### Token与session的区别 
+* 使用Token,服务端不需要保存状态. 在session中sessionid 是一个唯一标识的字符串，服务端是根据这个字符串，来查询在服务器端保持的session，这里面才保存着用户的登陆状态。但是token本身就是一种登陆成功凭证，他是在登陆成功后根据某种规则生成的一种信息凭证，他里面本身就保存着用户的登陆状态。服务器端只需要根据定义的规则校验这个token是否合法就行。
+* Token不需要借助cookie的. session-cookie是需要cookie配合的，那么在http代理客户端的选择上就只有浏览器了，因为只有浏览器才会去解析请求响应头里面的cookie,然后每次请求再默认带上该域名下的cookie。但是我们知道http代理客户端不只有浏览器，还有原生APP等等，这个时候cookie是不起作用的，或者浏览器端是可以禁止cookie的(虽然可以，但是这基本上是属于吃饱没事干的人干的事)，但是token 就不一样，他是登陆请求在登陆成功后再请求响应体中返回的信息，客户端在收到响应的时候，可以把他存在本地的cookie,storage，或者内存中，然后再下一次请求的请求头重带上这个token就行了。简单点来说cookie-session机制他限制了客户端的类型，而token验证机制丰富了客户端类型。
+* 时效性。session-cookie的sessionid实在登陆的时候生成的而且在登出事时一直不变的，在一定程度上安全就会低，而token是可以在一段时间内动态改变的。
+* 可扩展性。token验证本身是比较灵活的，一是token的解决方案有许多，常用的是JWT,二来我们可以基于token验证机制，专门做一个鉴权服务，用它向多个服务的请求进行统一鉴权。
+
+#### Token过期与Refresh Token
+token是访问特定资源的凭证，出于安全考虑,肯定是要有过期时间的。要不然一次登录便可能一直使用，那token认证还有什么意义? token可定是有过期时间的,一般不会很长,不会超高一个小时.</br>
+为什么需要refresh token?</br>
+如果token过期了，就要重新获取。继续重复第一次获取token的过程(比如登录，扫描授权等)，每一小时就必须获取一次! 这样做是非常不好的用户体验。为了解决这个问题,于是就有了refresh token.通过refresh token去重新获取新的 token.
+refresh token，也是加密字符串，并且和token是相关联的。与获取资源的token不同，refresh token的作用仅仅是获取新的token，因此其作用和安全性要求都较低，所以其过期时间也可以设置得长一些,可以以天为最小单位。当然如果refresh token过期了,还是需要重新登录验证的.
+
+#### Token 的生成方式
+最常见的 Token 生成方式是使用 JWT（Json Web Token），它是一种简洁的，自包含的方法用于通信双方之间以 JSON 对象的形式安全的传递信息 </br>
+
+使用 Token 后，服务器端并不会存储 Token，那怎么判断客户端发过来的 Token 是合法有效的呢？</br>
+答案其实就在 Token 字符串中，其实 Token 并不是一串杂乱无章的字符串，而是通过多种算法拼接组合而成的字符串</br>
+```javascript
+header 头部
+{
+  "alg": "HS256",
+  "typ": "JWT"
+}
+payload 负载
+{
+  "sub": "1234567890",
+  "name": "John Doe",
+  "iat": 1516239022,
+  "exp": 1555341649998
+}
+signature 签名
+```
+header里面描述加密算法和token的类型，类型一般都是JWT；</br>
+payload里面放的是用户的信息，也就是第一种登录方式中需要维护在服务器端session中的信息；</br>
+signature是对前两部分的签名，也可以理解为加密；实现需要一个密钥（secret），这个secret只有服务器才知道，然后使用header里面的算法按照如下方法来加密：</br>
+```javascript
+HMACSHA256(
+  base64UrlEncode(header) + "." +
+  base64UrlEncode(payload),
+  secret)
+  ```
+总之，最后的 jwt = base64url(header) + "." + base64url(payload) + "." + signature</br>
+jwt可以放在response中返回，也可以放在cookie中返回，这都是具体的返回方式，并不重要。</br>
+客户端发起请求时，官方推荐放在HTTP header中：
+```javascript
+Authorization: Bearer <token>
+```
+这样子确实也可以解决cookie跨域的问题，不过具体放在哪儿还是根据业务场景来定，并没有一定之规。
+
+
+
