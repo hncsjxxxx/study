@@ -1,4 +1,4 @@
-[toc]
+
 # 网络
 ### 1. https 连接时如何保证证书是有效的:
 * **CRL（Certificate Revocation List，证书撤销名单）**。PKI 体系中由 CA 维护的一个被撤销证书的列表，浏览器会定时拉
@@ -448,7 +448,7 @@ let Img = document.getElementsByTagName("img"),
 #### 反射型XSS
 反射型 XSS 攻击指的就是恶意脚本作为「网络请求的一部分」，随后网站又把恶意的JavaScript脚本返回给用户，当恶意 JavaScript 脚本在用户页面中被执行时，黑客就可以利用该脚本做一些恶意操作。</br>
 
-### 基于 DOM 的 XSS 攻击
+#### 基于 DOM 的 XSS 攻击
 基于 DOM 的 XSS 攻击是不牵涉到页面 Web 服务器的。具体来讲，黑客通过各种手段将恶意脚本注入用户的页面中，在数据传输的时候劫持网络数据包</br>
 
 常见的劫持手段有：
@@ -479,3 +479,19 @@ CSP，即浏览器中的内容安全策略，它的核心思想大概就是服�
 #### 第三步：服务器验证Token是否正确
 当用户从客户端得到了Token，再次提交给服务器的时候，服务器需要判断Token的有效性，验证过程是先解密Token，对比加密字符串以及时间戳，如果加密字符串一致且时间未过期，那么这个Token就是有效的。
  
+ ## 前端登录
+ ### Session-cookie
+ ### Token
+ ### SSO单点登录
+ ### OAuth第三方登录
+ 为什么会有登录这回事: 首先这是因为HTTP是无状态的协议,所谓无状态就是在两次请求之间服务器并不会保存任何的数据
+ ### Session-cookie
+ 1.服务器在接受客户端首次访问时在服务器端创建session，然后保存session(我们可以将session保存在内存中，也可以保存在redis中，推荐使用后者)，然后给这个session生成一个唯一的标识字符串sessionId,然后在响应头中种下这个唯一标识字符串,并通过 Set-Cookie 头信息，将 SessionId 写入 Cookie 中。
+ 2.浏览器中收到请求响应的时候会解析响应头，然后将sid保存在本地cookie中，浏览器在下次http请求的请求头中会带上该域名下的cookie信息，
+ 3.服务器在接受客户端请求时会去解析请求头cookie中的sid，服务端通过cookie中的sessionId找到对应的session然后判断该请求是否合法
+ #### Session-cookie存在的问题
+*  由于服务器端需要对接大量的客户端，也就需要存放大量的 SessionId，这样会导致服务器压力过大。
+*  如果服务器端是一个集群，为了同步登录态，需要将 SessionId 同步到每一台机器上，无形中增加了服务器端维护成本。
+*  由于 SessionId 存放在 Cookie 中，所以无法避免 CSRF 攻击。
+
+### Token
