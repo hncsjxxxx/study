@@ -590,7 +590,8 @@ SSO一般都需要一个独立的认证中心（passport），子系统的登录
 * 授权之后，微信会根据拉起 a.com?code=123 ，这时带上了一个临时票据 code。获取 code 之后， a.com 会拿着 code 、appid、appsecret，向微信服务器申请 token，验证成功后，微信会下发一个 token。
 *有了 token 之后， a.com 就可以凭借 token 拿到对应的微信用户头像，用户昵称等信息了。a.com 提示用户登录成功，并将登录状态写入 Cooke，以作为后续访问的凭证。
 
-
+## CDN加速原理
+![](/image/cdn.png)
 
 
 
