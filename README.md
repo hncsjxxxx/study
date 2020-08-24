@@ -276,6 +276,9 @@ return __webpack_require__(__webpack_require__.s = "./src/main.js");
 ## 了不起的 Webpack 构建流程学习指南
 [了不起的 Webpack 构建流程学习指南](https://mp.weixin.qq.com/s/BKAdclv6UBNfJ7IVJ1WL9g)
 
+## web工程化相关
+[从零配置typescript项目](https://juejin.im/post/6856410900577026061)
+
 # 总结
 ### 1. 一个对象如何复制给另一个对象，互不影响
 * Object.assign();
@@ -620,6 +623,133 @@ CDN的工作原理就是将您源站的资源缓存到位于全球各地的CDN�
 * setTimeout存储到延迟任务队列中
 * 当主线程执行完任务队列中的一个任务后，计算延迟任务队列中到期到任务，并执行所有到期任务
 * 执行完所有到期任务后，让出主线程，进行下一次事件循环
+
+## 十五张图带你彻底搞懂从URL到页面展示发生的故事
+[十五张图带你彻底搞懂从URL到页面展示发生的故事](https://mp.weixin.qq.com/s/JbsJO2GCDBFjJztmhPMrcg)
+
+##  在前端开发中，如何获取浏览器的唯一标识
+由于不同的系统显卡绘制 canvas 时渲染参数、抗锯齿等算法不同，因此绘制成图片数据的 CRC 校验也不一样。</br>
+
+但是对于常见的需求就有成熟的解决方案，若在生产环境使用，可以使用以下库
+
+fingerprintjs2[3]
+它依据以下信息，获取到浏览器指纹信息，「而这些信息，则成为 component」
+
+* canvas
+* webgl
+* UserAgent
+* AudioContext
+* 对新式 API 的支持程度等
+
+根据 canvas 可以获取浏览器指纹信息</br>
+* 绘制 canvas，获取 base64 的 dataurl
+* 对 dataurl 这个字符串进行 md5 摘要计算，得到指纹信息
+若在生产环境使用，可以使用 fingerprintjs2，根据业务需求，如单设备是否可跨浏览器，以此选择合适的 component
+
+## 在服务端应用中如何获得客户端 IP
+「如果有 x-forwarded-for 的请求头，则取其中的第一个 IP，否则取建立连接 socket 的 remoteAddr。」</br>
+
+而 x-forwarded-for 基本已成为了基于 proxy 的标准 HTTP 头，格式如下，可见第一个 IP 代表其真实的 IP，可以参考 MDN X-Forwarded-For
+
+## CORS 如果需要指定多个域名怎么办
+[另一份资料](https://zhuanlan.zhihu.com/p/38972475)
+CORS 通过控制 Access-Control-Allow-Origin 控制哪些域名可以共享资源，取值如下</br>
+> Access-Control-Allow-Origin: <origin> | *
+其中 * 代表所有域名，origin 代表指定特定域名，那如何设置多个域名了？</br>
+此时需要通过代码实现，「根据请求头中的 Origin 来设置响应头 Access-Control-Allow-Origin」，那 Origin 又是什么东西？ </br>
+并不是所有请求都会自动带上 Origin，在浏览器中带 Origin 的逻辑如下
+
+* 如果存在跨域，则带上 Origin，值为当前域名
+* 如果不存在跨域，则不带 Origin
+逻辑理清楚后，关于服务器中对于 Access-Control-Allow-Origin 设置多域名的逻辑也很清晰了
+
+* 如果请求头不带有 Origin，证明未跨域，则不作任何处理
+* 如果请求头带有 Origin，证明跨域，根据 Origin 设置相应的 Access-Control-Allow-Origin: <Origin>
+
+此时可以给多个域名控制 CORS，但此时假设有两个域名访问 static.shanyue.tech 的跨域资源</br>
+
+* foo.shanyue.tech，响应头中返回 Access-Control-Allow-Origin: foo.shanyue.tech
+* bar.shanyue.tech，响应头中返回 Access-Control-Allow-Origin: bar.shanyue.tech
+看起来一切正常，但如果中间有缓存怎么办？</br>
+
+* foo.shanyue.tech，响应头中返回 Access-Control-Allow-Origin: foo.shanyue.tech，被 CDN 缓存
+* 「bar.shanyue.tech，因由缓存，响应头中返回 Access-Control-Allow-Origin: foo.shanyue.tech，跨域出现问题」
+此时，Vary: Origin 就上场了，代表为不同的 Origin 缓存不同的资源</br>
+
+#### 如果服务器未使用“*”，而是指定了一个域，那么为了向客户端表明服务器的返回会根据Origin请求头而有所不同，必须在Vary响应头中包含Origin。
+
+### 简要答案
+CORS 如何指定多个域名？
+
+「根据请求头中的 Origin 来设置响应头 Access-Control-Allow-Origin」，思路如下
+
+* 总是设置 Vary: Origin，避免 CDN 缓存破坏 CORS 配置
+* 如果请求头不带有 Origin，证明未跨域，则不作任何处理
+* 如果请求头带有 Origin，证明浏览器访问跨域，根据 Origin 设置相应的 Access-Control-Allow-Origin: <Origin>
+
+如果是写死的 Access-Control-Allow-Origin，一定不要加 Vary: Origin，如果是根据 Origin请求头动态计算出的Access-Control-Allow-Origin，一定要始终加上Vary: Origin，即便在没有 Origin请求头的情况。 </br>
+
+当然，本文讨论的仅限可缓存的静态资源，如果是为动态接口设置 CORS，反正都不允许缓存，当然也就没这个问题了。
+
+## 如何避免 CDN 为 PC 端缓存移动端页面
+如果 PC 端和移动端是一套代码则不会出现这个问题。「这个问题出现在 PC 端和移动端是两套代码，却共用一个域名。」</br>
+使用 nginx 配置如下，根据 UA 判断是否移动端，而走不同的逻辑 (判断 UA 是否移动端容易出问题)</br>
+解决方案通常使用 Vary 响应头，来控制 CDN 对不同请求头的缓存。</br>
+
+「此处可以使用 Vary: User-Agent ，代表如果 User-Agent 不一样，则重新发起请求，而非从缓存中读取页面」</br>
+#### 简答
+使用 Vary: User-Agent，根据 UA 进行缓存。</br>
+
+Vary: User-Agent </br>
+但最好不要出现这种情况，PC 端和移动端如果是两套代码，建议用两个域名，理由如下
+* nginx 判断是否移动端容易出错
+* 对缓存不友好
+
+## 如何把 json 数据转化为 demo.json 并下载文件
+json 视为字符串，可以利用 DataURL 进行下载</br>
+
+Text -> DataURL </br>
+
+除了使用 DataURL，还可以转化为 Object URL 进行下载 </br>
+
+Text -> Blob -> Object URL </br>
+
+可以把以下代码直接粘贴到控制台下载文件
+``` javascript
+function download (url, name) {
+  const a = document.createElement('a')
+  a.download = name
+  a.rel = 'noopener'
+  a.href = url
+  // 触发模拟点击
+  a.dispatchEvent(new MouseEvent('click'))
+  // 或者 a.click()
+}
+
+const json = {
+  a: 3,
+  b: 4,
+  c: 5
+}
+const str = JSON.stringify(json, null, 2)
+
+// 方案一：Text -> DataURL
+const dataUrl = `data:,${str}`
+download(dataUrl, 'demo.json')
+
+// 方案二：Text -> Blob -> ObjectURL
+const url = URL.createObjectURL(new Blob(str.split('')))
+download(url, 'demo1.json')
+```
+#### 总结
+* 模拟下载，可以通过新建一个 <a href="url" download><a> 标签并设置 url 及 download 属性来下载
+* 可以通过把 json 转化为 dataurl 来构造 URL
+* 以通过把 json 转换为 Blob 再转化为 ObjectURL 来构造 URL
+
+
+
+
+
 
 
 
