@@ -867,6 +867,8 @@ t();
 ![avatar](/image/jicheng5.png)
 ES6的 extends的 ES5版本实现</br>
 知道了 ES6extends继承做了什么操作和设置 __proto__的知识点后，把上面 ES6例子的用 ES5就比较容易实现了，也就是说实现寄生组合式继承，简版代码就是：
+![avatar](/image/jicheng6.png)
+![avatar](/image/jicheng7.png)
 
 
 
