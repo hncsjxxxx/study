@@ -1,3 +1,6 @@
+# REACT
+[生命周期执行顺序](https://www.cnblogs.com/soyxiaobi/p/9559117.html)
+
 # 前端安全 XSS CSRF
 [前端安全系列（一）：如何防止XSS攻击？](https://tech.meituan.com/2018/09/27/fe-security.html)
 [前端安全系列（二）：如何防止CSRF攻击？](https://tech.meituan.com/2018/10/11/fe-security-csrf.html)
