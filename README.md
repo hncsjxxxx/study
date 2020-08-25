@@ -12,6 +12,20 @@
 ![avatar](/image/jiankong6.png)
 ![avatar](/image/jiankong7.png)
 
+# 大规格文件上传优化
+[大规格文件上传优化](https://mp.weixin.qq.com/s/0oVi1qYNe0QNiPmThco2qg)
+![avatar](/image/sc.png)
+![avatar](/image/sc1.png)
+![avatar](/image/sc2.png)
+![avatar](/image/sc3.png)
+![avatar](/image/sc4.png)
+![avatar](/image/sc5.png)
+![avatar](/image/sc6.png)
+![avatar](/image/sc7.png)
+![avatar](/image/sc8.png)
+![avatar](/image/sc9.png)
+![avatar](/image/sc10.png)
+
 # 网络
 ### 1. https 连接时如何保证证书是有效的:
 * **CRL（Certificate Revocation List，证书撤销名单）**。PKI 体系中由 CA 维护的一个被撤销证书的列表，浏览器会定时拉
