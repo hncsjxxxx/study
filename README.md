@@ -1,3 +1,7 @@
+# 前端安全 XSS CSRF
+[前端安全系列（一）：如何防止XSS攻击？](https://tech.meituan.com/2018/09/27/fe-security.html)
+[前端安全系列（二）：如何防止CSRF攻击？](https://tech.meituan.com/2018/10/11/fe-security-csrf.html)
+
 
 # 网络
 ### 1. https 连接时如何保证证书是有效的:
@@ -746,10 +750,443 @@ download(url, 'demo1.json')
 * 可以通过把 json 转化为 dataurl 来构造 URL
 * 以通过把 json 转换为 Blob 再转化为 ObjectURL 来构造 URL
 
+## 在浏览器中如何监听剪切板中内容
+通过 Clipboard API 可以获取剪切板中内容，但需要获取到 clipboard-read 的权限</br>
+剪贴板 Clipboard API 提供了响应剪贴板命令（剪切、复制和粘贴）与异步读写系统剪贴板的能力。从权限 Permissions API 获取权限之后，才能访问剪贴板内容；如果用户没有授予权限，则不允许读取或更改剪贴板内容</br>
+> 例子见MDN
+
+## 既然 cors 配置可以做跨域控制，那可以防止 CSRF 攻击吗 
+
+「对 CORS 一点用也没有」
+
+* 「form 提交不通过 CORS 检测」，你可以在本地进行测试
+* 即使通过 xhr 及 fetch 进行提交被 CORS 拦住， 「但是对于简单请求而言，请求仍被发送」，已造成了攻击
+
+## try...catch捕获异常的一个注意点
+而 try catch 的作用仅仅是捕获当前调用栈的错误（上面异常传播部分已经讲过了）。因此异步的错误是无法捕获的，比如；
+``` javascript
+try {
+  fs.readFile("something-not-exist.lucifer", (err, data) => {
+    if (err) {
+      throw err;
+    }
+  });
+} catch (err) {
+  console.log("catching an error");
+}
+```
+上面的 catching an error 不会被打印。因为错误抛出的时候， 调用栈中不包含这个 catch 语句，而仅仅在执行fs.readFile的时候才会。</br>
+如果我们换成同步读取文件的例子看看：
+```javascript
+try {
+  fs.readFileSync("something-not-exist.lucifer");
+} catch (err) {
+  console.log("catching an error");
+}
+```
+上面的代码会打印 catching an error。因为读取文件被同步发起，文件返回之前线程会被挂起，当线程恢复执行的时候， fs.readFileSync 仍然在函数调用栈中，因此 fs.readFileSync 产生的异常会冒泡到 catch 语句。</br>
+
+#### 简单来说就是「异步产生的错误不能用 try catch 捕获，而要使用回调捕获。」
+可能有人会问了，我见过用 try catch 捕获异步异常啊。比如：
+
+```javascript
+rejectIn = (ms) =>
+  new Promise((_, r) => {
+    setTimeout(() => {
+      r(1);
+    }, ms);
+  });
+async function t() {
+  try {
+    await rejectIn(0);
+  } catch (err) {
+    console.log("catching an error", err);
+  }
+}
+
+t();
+```
+本质上这只是一个语法糖，是 Promise.prototype.catch 的一个语法糖而已。而这一语法糖能够成立的原因在于其用了 Promise 这种包装类型。如果你不用包装类型，比如上面的 fs.readFile 不用 Promise 等包装类型包装，打死都不能用 try catch 捕获。</br>
+
+而如果我们使用 babel 转义下，会发现 try catch 不见了，变成了 switch case 语句。这就是 try catch “可以捕获异步异常”的原因，仅此而已，没有更多。
+> 虽然浏览器并不像 babel 转义这般实现，但是至少我们明白了一点。目前的 try catch 的作用机制是无法捕获异步异常的。
+
+## CSP性能优化相关
+> CRP又称关键渲染路径,关键渲染路径是指浏览器通过把 HTML、CSS 和 JavaScript 转化成屏幕上的像素的步骤顺序。优化关键渲染路径可以提高渲染性能。关键渲染路径包含了 Document Object Model (DOM)，CSS Object Model (CSSOM)，渲染树和布局。
+* 关键资源个数。关键资源个数越多，首次页面的加载时间就会越长。
+* 关键资源大小。通常情况下，所有关键资源的内容越小，其整个资源的下载时间也就越短，那么阻塞渲染的时间也就越短。
+* 请求关键资源需要多少个RTT（Round Trip Time）。RTT 是网络中一个重要的性能指标，表示从发送端发送数据开始，到发送端收到来自接收端的确认，总共经历的时延。
+* 如何减少关键资源的个数？一种方式是可以将 JavaScript 和 CSS 改成内联的形式，比如上图的 JavaScript 和 CSS，若都改成内联模式，那么关键资源的个数就由 3 个减少到了 1 个。另一种方式，如果 JavaScript 代码没有 DOM 或者 CSSOM 的操作，则可以改成 sync 或者 defer 属性
+* 如何减少关键资源的大小？可以压缩 CSS 和 JavaScript 资源，移除 HTML、CSS、JavaScript 文件中一些注释内容
+* 如何减少关键资源 RTT 的次数？可以通过减少关键资源的个数和减少关键资源的大小搭配来实现。除此之外，还可以使用 CDN 来减少每次 RTT 时长。
+
+* 避免DOM的回流。也就是尽量避免重排和重绘操作。
+
+* 减少 JavaScript 脚本执行时间。有时JavaScript 函数的一次执行时间可能有几百毫秒，这就严重霸占了主线程执行其他渲染任务的时间。针对这种情况我们可以采用以下两种策略：
+
+一种是将一次执行的函数分解为多个任务，使得每次的执行时间不要过久。</br>
+另一种是采用 Web Workers。
+* DOM操作相关的优化。浏览器有渲染引擎和JS引擎，所以当用JS操作DOM时，这两个引擎要通过接口互相“交流”，因此每一次操作DOM（包括只是访问DOM的属性），都要进行引擎之间解析的开销，所以常说要减少 DOM 操作。总结下来有以下几点：
+
+缓存一些计算属性，如let left = el.offsetLeft。</br>
+通过DOM的class来集中改变样式，而不是通过style一条条的去修改。</br>
+分离读写操作。现代的浏览器都有渲染队列的机制。</br>
+放弃传统操作DOM的时代，基于vue/react等采用virtual dom的框架</br>
+* 合理利用 CSS 合成动画。合成动画是直接在合成线程上执行的，这和在主线程上执行的布局、绘制等操作不同，如果主线程被 JavaScript 或者一些布局任务占用，CSS 动画依然能继续执行。所以要尽量利用好 CSS 合成动画，如果能让 CSS 处理动画，就尽量交给 CSS 来操作。
+
+* CSS选择器优化。我们知道CSS引擎查找是从右向左匹配的。所以基于此有以下几条优化方案：
+
+尽量不要使用通配符</br>
+少用标签选择器</br>
+尽量利用属性继承特性</br>
+* CSS属性优化。浏览器绘制图像时，CSS的计算也是耗费性能的，一些属性需浏览器进行大量的计算，属于昂贵的属性（box-shadows、border-radius、transforms、filters、opcity、:nth-child等），这些属性在日常开发中经常用到，所以并不是说不要用这些属性，而是在开发中，如果有其它简单可行的方案，那可以优先选择没有昂贵属性的方案。
+
+* 避免频繁的垃圾回收。我们知道 JavaScript 使用了自动垃圾回收机制，如果在一些函数中频繁创建临时对象，那么垃圾回收器也会频繁地去执行垃圾回收策略。这样当垃圾回收操作发生时，就会占用主线程，从而影响到其他任务的执行，严重的话还会让用户产生掉帧、不流畅的感觉。
+
+一般而言，浏览器解析DNS需要20-120ms，因此DNS解析可优化之处几乎没有。但存在这样一个场景，网站有很多图片在不同域名下，那如果在登录页就提前解析了之后可能会用到的域名，使解析结果缓存过，这样缩短了DNS解析时间，提高网站整体上的访问速度了，这就是DNS预解析。
+
+> X-DNS-Prefetch-Control 头控制着浏览器的 DNS 预读取功能。DNS 预读取是一项使浏览器主动去执行域名解析的功能，其范围包括文档的所有链接，无论是图片的，CSS 的，还是 JavaScript 等其他用户能够点击的 URL。
+
+
+我们这里就简单看一下如何去做DNS预解析：
+
+在页面头部加入，这样浏览器对整个页面进行预解析
+```javascript
+<meta http-equiv="x-dns-prefetch-control" content="on">
+```
+通过 link 标签手动添加要解析的域名，比如：
+```javascript
+<link rel="dns-prefetch" href="//img10.360buyimg.com"/>
+```
+
+## JS继承 ---需要网上继续看完善资料
+![avatar](/image/jicheng.png)
+![avatar](/image/jicheng2.png)
+![avatar](/image/jicheng3.png)
+![avatar](/image/jicheng4.png)
+![avatar](/image/jicheng5.png)
+ES6的 extends的 ES5版本实现</br>
+知道了 ES6extends继承做了什么操作和设置 __proto__的知识点后，把上面 ES6例子的用 ES5就比较容易实现了，也就是说实现寄生组合式继承，简版代码就是：
+```javascript
+// ES5 实现ES6 extends的例子
+
+function
+ 
+Parent
+(
+name
+){
+
+    
+this
+.
+name 
+=
+ name
+;
+
+}
+
+Parent
+.
+sayHello 
+=
+ 
+function
+(){
+
+    console
+.
+log
+(
+'hello'
+);
+
+}
+
+Parent
+.
+prototype
+.
+sayName 
+=
+ 
+function
+(){
+
+    console
+.
+log
+(
+'my name is '
+ 
++
+ 
+this
+.
+name
+);
+
+    
+return
+ 
+this
+.
+name
+;
+
+}
 
 
 
+function
+ 
+Child
+(
+name
+,
+ age
+){
 
+    
+// 相当于super
+
+    
+Parent
+.
+call
+(
+this
+,
+ name
+);
+
+    
+this
+.
+age 
+=
+ age
+;
+
+}
+
+// new
+
+function
+ object
+(){
+
+    
+function
+ F
+()
+ 
+{}
+
+    F
+.
+prototype 
+=
+ proto
+;
+
+    
+return
+ 
+new
+ F
+();
+
+}
+
+function
+ _inherits
+(
+Child
+,
+ 
+Parent
+){
+
+    
+// Object.create
+
+    
+Child
+.
+prototype 
+=
+ 
+Object
+.
+create
+(
+Parent
+.
+prototype
+);
+
+    
+// __proto__
+
+    
+// Child.prototype.__proto__ = Parent.prototype;
+
+    
+Child
+.
+prototype
+.
+constructor 
+=
+ 
+Child
+;
+
+    
+// ES6
+
+    
+// Object.setPrototypeOf(Child, Parent);
+
+    
+// __proto__
+
+    
+Child
+.
+__proto__ 
+=
+ 
+Parent
+;
+
+}
+
+_inherits
+(
+Child
+,
+  
+Parent
+);
+
+Child
+.
+prototype
+.
+sayAge 
+=
+ 
+function
+(){
+
+    console
+.
+log
+(
+'my age is '
+ 
++
+ 
+this
+.
+age
+);
+
+    
+return
+ 
+this
+.
+age
+;
+
+}
+
+var
+ parent 
+=
+ 
+new
+ 
+Parent
+(
+'Parent'
+);
+
+var
+ child 
+=
+ 
+new
+ 
+Child
+(
+'Child'
+,
+ 
+18
+);
+
+console
+.
+log
+(
+'parent: '
+,
+ parent
+);
+ 
+// parent:  Parent {name: "Parent"}
+
+Parent
+.
+sayHello
+();
+ 
+// hello
+
+parent
+.
+sayName
+();
+ 
+// my name is Parent
+
+console
+.
+log
+(
+'child: '
+,
+ child
+);
+ 
+// child:  Child {name: "Child", age: 18}
+
+Child
+.
+sayHello
+();
+ 
+// hello
+
+child
+.
+sayName
+();
+ 
+// my name is Child
+
+child
+.
+sayAge
+();
+ 
+// my age is 18
+```
 
 
 
