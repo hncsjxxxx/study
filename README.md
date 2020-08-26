@@ -1,5 +1,14 @@
 # REACT
 [生命周期执行顺序](https://www.cnblogs.com/soyxiaobi/p/9559117.html)
+![avatar](/image/sm.png)
+![avatar](/image/sm1.png)
+![avatar](/image/sm2.png)
+![avatar](/image/sm3.png)
+![avatar](/image/sm4.png)
+![avatar](/image/sm5.png)
+![avatar](/image/sm6.png)
+![avatar](/image/sm7.png)
+![avatar](/image/sm8.png)
 
 # 前端安全 XSS CSRF
 [前端安全系列（一）：如何防止XSS攻击？](https://tech.meituan.com/2018/09/27/fe-security.html)
