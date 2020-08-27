@@ -10,6 +10,10 @@
 ![avatar](/image/sm7.png)
 ![avatar](/image/sm8.png)
 
+## REACT HOOK 
+* 官方文档
+* [react最佳实践](https://react.docschina.org/blog/2020/05/22/react-hooks.html)
+
 # JS的图片压缩
 [图片压缩](https://mp.weixin.qq.com/s/-3Y6pqXY3DqAXmDdEVoTbA)
 说起图片压缩，大家想到的或者平时用到的很多工具都可以实现，例如，客户端类的有图片压缩工具 PPDuck3， JS 实现类的有插件 compression.js ，亦或是在线处理类的 OSS 上传，文件上传后，在访问文件时中也有图片的压缩配置选项，不过，能不能自己撸一套  JS 实现的图片压缩代码呢？当然可以，那我们先来理一下思路。</br>
@@ -1014,7 +1018,12 @@ ES6的 extends的 ES5版本实现</br>
 ![avatar](/image/jicheng6.png)
 ![avatar](/image/jicheng7.png)
 
+## JavaScript是不能用==或===操作符直接比较两个数组是否相等的
+因为JavaScript里面Array是对象，==或===操作符只能比较两个对象是否是同一个实例，也就是是否是同一个对象引用。目前JavaScript没有内置的操作符判断对象的内容是否相同。</br>
+alert([]==[]);    // false
+alert([]===[]);   // false
 
+NaN === NaN;        // false
 
 
 
