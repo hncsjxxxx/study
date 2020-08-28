@@ -13,6 +13,11 @@
 ## REACT HOOK 
 * 官方文档
 * [react最佳实践](https://react.docschina.org/blog/2020/05/22/react-hooks.html)
+[一起围观由React Hooks防抖引发的面试翻车现场](https://mp.weixin.qq.com/s/vCXnTXDOTflxooPudnM6Hw)
+[你可能不需要派生STATE](https://zh-hans.reactjs.org/blog/2018/06/07/you-probably-dont-need-derived-state.html)
+### detail：
+
+
 
 # JS的图片压缩
 [图片压缩](https://mp.weixin.qq.com/s/-3Y6pqXY3DqAXmDdEVoTbA)
