@@ -15,8 +15,14 @@
 * [react最佳实践](https://react.docschina.org/blog/2020/05/22/react-hooks.html)
 [一起围观由React Hooks防抖引发的面试翻车现场](https://mp.weixin.qq.com/s/vCXnTXDOTflxooPudnM6Hw)
 [你可能不需要派生STATE](https://zh-hans.reactjs.org/blog/2018/06/07/you-probably-dont-need-derived-state.html)
-### detail：
 
+[彻底理解 React hook useCallback和useMemo的区别](https://juejin.im/post/6844904032113278990)
+* useCallback 优化针对于子组件渲染
+* useMemo 优化针对于当前组件高开销的计算
+[一些hook](https://juejin.im/post/6844904037876236296#heading-3)
+* useParam
+* useLocation
+* useHistory
 
 
 # JS的图片压缩
