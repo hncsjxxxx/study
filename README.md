@@ -1038,3 +1038,6 @@ NaN === NaN;        // false
 
 
 
+
+## rgba和opacity设置透明度的区别
+opacity会影响所有子元素，rgba不会
